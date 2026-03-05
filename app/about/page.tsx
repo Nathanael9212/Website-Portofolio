@@ -36,15 +36,10 @@ export default function AboutPage() {
       <section className="contentSection">
         <h2>Background</h2>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr',  // ← 66% text, 33% foto
-          gap: '64px',
-          alignItems: 'center',
-          marginTop: '32px',
-        }}>
+        {/* Responsive grid: pakai class aboutGrid */}
+        <div className="aboutGrid">
 
-          {/* Text di Kiri */}
+          {/* Text */}
           <div>
             <p>
               Mahasiswa Informatika di UPN Veteran Jawa Timur yang fokus membangun aplikasi web berbasis Laravel dengan pendekatan praktis dan efisien.
@@ -55,26 +50,19 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Foto */}
-          <div style={{
-            width: '100%',
-            maxWidth: '280px',
-            aspectRatio: '1',
-            borderRadius: '20px',
-            overflow: 'hidden',
-            border: '3px solid var(--accent)',
-            boxShadow: '0 8px 24px rgba(102, 126, 234, 0.2)',
-            position: 'relative',
-            margin: '0 auto',  // ← Center di kolomnya
-          }}>
-            <Image
-              src="/images/foto.png"
-              alt="Nathanael Kristian"
-              fill
-              style={{
-                objectFit: 'cover',
-              }}
-            />
+          {/* Foto — blob style sama seperti Hero */}
+          <div className="aboutPhotoWrap">
+            <div className="aboutPhotoFrame">
+              <div className="aboutPhoto">
+                <Image
+                  src="/images/fotoku11.png"
+                  alt="Nathanael Kristian"
+                  width={175}
+                  height={226}
+                  style={{ objectFit: 'cover', objectPosition: 'center 15%' }}
+                />
+              </div>
+            </div>
           </div>
 
         </div>
@@ -90,19 +78,19 @@ export default function AboutPage() {
             <ul className="techList">
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(255, 45, 32, 0.1)' }}>
-                  <SiLaravel size={28} color="#FF2D20" />
+                  <SiLaravel size={26} color="#FF2D20" />
                 </div>
                 <span>Laravel (PHP)</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(68, 121, 161, 0.1)' }}>
-                  <SiMysql size={28} color="#4479A1" />
+                  <SiMysql size={26} color="#4479A1" />
                 </div>
                 <span>MySQL</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(51, 103, 145, 0.1)' }}>
-                  <SiPostgresql size={28} color="#336791" />
+                  <SiPostgresql size={26} color="#336791" />
                 </div>
                 <span>PostgreSQL</span>
               </li>
@@ -115,28 +103,28 @@ export default function AboutPage() {
             <ul className="techList">
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(227, 79, 38, 0.1)' }}>
-                  <SiHtml5 size={24} color="#E34F26" />
-                  <SiCss3 size={24} color="#1572B6" />
-                  <SiJavascript size={24} color="#F7DF1E" />
+                  <SiHtml5 size={20} color="#E34F26" />
+                  <SiCss3 size={20} color="#1572B6" />
+                  <SiJavascript size={20} color="#F7DF1E" />
                 </div>
                 <span>HTML, CSS, JS</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(6, 182, 212, 0.1)' }}>
-                  <SiTailwindcss size={28} color="#06B6D4" />
+                  <SiTailwindcss size={26} color="#06B6D4" />
                 </div>
                 <span>Tailwind CSS</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(97, 218, 251, 0.1)' }}>
-                  <SiReact size={24} color="#61DAFB" />
-                  <SiVuedotjs size={24} color="#4FC08D" />
+                  <SiReact size={22} color="#61DAFB" />
+                  <SiVuedotjs size={22} color="#4FC08D" />
                 </div>
                 <span>React / Vue.js</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
-                  <SiNextdotjs size={28} style={{ color: 'var(--text)' }} />
+                  <SiNextdotjs size={26} style={{ color: 'var(--text)' }} />
                 </div>
                 <span>Next.js</span>
               </li>
@@ -149,26 +137,26 @@ export default function AboutPage() {
             <ul className="techList">
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(240, 80, 50, 0.1)' }}>
-                  <SiGit size={24} color="#F05032" />
-                  <SiGithub size={24} style={{ color: 'var(--text)', marginLeft: '4px' }} />
+                  <SiGit size={22} color="#F05032" />
+                  <SiGithub size={22} style={{ color: 'var(--text)', marginLeft: '4px' }} />
                 </div>
                 <span>Git & GitHub</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(0, 122, 204, 0.1)' }}>
-                  <VscCode size={28} color="#007ACC" />
+                  <VscCode size={26} color="#007ACC" />
                 </div>
                 <span>VS Code</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(255, 108, 55, 0.1)' }}>
-                  <SiPostman size={28} color="#FF6C37" />
+                  <SiPostman size={26} color="#FF6C37" />
                 </div>
                 <span>Postman</span>
               </li>
               <li className="techListItem">
                 <div className="techIconBox" style={{ background: 'rgba(242, 78, 30, 0.1)' }}>
-                  <SiFigma size={28} color="#F24E1E" />
+                  <SiFigma size={26} color="#F24E1E" />
                 </div>
                 <span>Figma</span>
               </li>
@@ -198,7 +186,7 @@ export default function AboutPage() {
 
       <section className="contentSection">
         <h2>Certificates</h2>
-        <div style={{ display: 'grid', gap: '20px', marginTop: '24px' }}>
+        <div style={{ display: 'grid', gap: '16px', marginTop: '20px' }}>
           {certificates.map((cert) => (
             <div key={cert.id} className="certCard">
               <div className="certIcon">📜</div>

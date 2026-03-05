@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, addDoc, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 interface Message {
   id: string;
   name: string;
   message: string;
-  createdAt: Timestamp;
+  created_at: string;
 }
 
 export default function GuestbookPage() {
@@ -16,23 +15,42 @@ export default function GuestbookPage() {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-  // Real-time listener untuk ambil data dari Firestore
+  // Fetch initial messages
   useEffect(() => {
-    const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('guestbook')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Message));
-      setMessages(msgs);
-    });
+      if (!error && data) {
+        setMessages(data);
+      }
+      setFetching(false);
+    };
 
-    return () => unsubscribe();
+    fetchMessages();
+
+    // Realtime subscription — replace Firebase onSnapshot
+    const channel = supabase
+      .channel('guestbook-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'guestbook' },
+        (payload) => {
+          setMessages((prev) => [payload.new as Message, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // Handle submit form
+  // Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -43,23 +61,28 @@ export default function GuestbookPage() {
 
     setLoading(true);
 
-    try {
-      await addDoc(collection(db, 'guestbook'), {
-        name: name.trim(),
-        message: message.trim(),
-        createdAt: Timestamp.now()
-      });
+    const { error } = await supabase
+      .from('guestbook')
+      .insert([{ name: name.trim(), message: message.trim() }]);
 
-      // Reset form
-      setName('');
-      setMessage('');
-      alert('Pesan berhasil dikirim! 🎉');
-    } catch (error) {
+    if (error) {
       console.error('Error:', error);
       alert('Gagal mengirim pesan. Coba lagi!');
-    } finally {
-      setLoading(false);
+    } else {
+      setName('');
+      setMessage('');
+      // No need to manually update state — realtime subscription handles it
     }
+
+    setLoading(false);
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   };
 
   return (
@@ -69,15 +92,16 @@ export default function GuestbookPage() {
         <p className="lead">Tinggalkan pesan atau saran untuk saya</p>
       </div>
 
-      {/* Form Kirim Pesan */}
+      {/* Form */}
       <section className="contentSection">
         <form onSubmit={handleSubmit} style={{ maxWidth: '600px', margin: '0 auto' }}>
           <div style={{ marginBottom: '20px' }}>
             <label style={{
               display: 'block',
               marginBottom: '8px',
-              fontWeight: '500',
-              color: 'var(--text)'
+              fontWeight: '600',
+              fontSize: '14px',
+              color: 'var(--text)',
             }}>
               Nama
             </label>
@@ -90,22 +114,27 @@ export default function GuestbookPage() {
               maxLength={50}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
+                padding: '11px 14px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border)',
-                background: 'var(--surface)',
+                background: 'var(--surface2)',
                 color: 'var(--text)',
                 fontSize: '15px',
+                outline: 'none',
+                transition: 'border-color 0.2s ease',
               }}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--text)'}
+              onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
             />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <label style={{
               display: 'block',
               marginBottom: '8px',
-              fontWeight: '500',
-              color: 'var(--text)'
+              fontWeight: '600',
+              fontSize: '14px',
+              color: 'var(--text)',
             }}>
               Pesan
             </label>
@@ -118,47 +147,81 @@ export default function GuestbookPage() {
               rows={4}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
+                padding: '11px 14px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border)',
-                background: 'var(--surface)',
+                background: 'var(--surface2)',
                 color: 'var(--text)',
                 fontSize: '15px',
                 resize: 'vertical',
                 fontFamily: 'inherit',
+                outline: 'none',
+                transition: 'border-color 0.2s ease',
               }}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--text)'}
+              onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
             />
+            <div style={{
+              textAlign: 'right',
+              fontSize: '12px',
+              color: 'var(--muted)',
+              marginTop: '6px',
+            }}>
+              {message.length}/500
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
+            className="btn btnPrimary"
             style={{
-              padding: '12px 32px',
-              background: loading ? 'var(--muted)' : 'var(--accent)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '15px',
-              fontWeight: '600',
+              opacity: loading ? 0.6 : 1,
               cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s ease',
+              width: '100%',
             }}
           >
-            {loading ? 'Mengirim...' : 'Kirim Pesan'}
+            {loading ? 'Mengirim...' : 'Kirim Pesan 🎉'}
           </button>
         </form>
       </section>
 
-      {/* Daftar Pesan */}
+      {/* Messages List */}
       <section className="contentSection">
-        <h2>Pesan dari Pengunjung ({messages.length})</h2>
-        <div style={{ display: 'grid', gap: '16px', marginTop: '24px' }}>
-          {messages.length === 0 ? (
+        <h2>
+          Pesan dari Pengunjung
+          <span style={{
+            marginLeft: '10px',
+            fontSize: '16px',
+            fontWeight: '500',
+            color: 'var(--muted)',
+          }}>
+            ({messages.length})
+          </span>
+        </h2>
+
+        <div style={{ display: 'grid', gap: '14px', marginTop: '24px' }}>
+          {fetching ? (
+            // Loading skeleton
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} style={{
+                padding: '20px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--surface2)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }}>
+                <div style={{ height: '14px', width: '30%', background: 'var(--border)', borderRadius: '4px', marginBottom: '12px' }} />
+                <div style={{ height: '12px', width: '80%', background: 'var(--border)', borderRadius: '4px', marginBottom: '8px' }} />
+                <div style={{ height: '12px', width: '60%', background: 'var(--border)', borderRadius: '4px' }} />
+              </div>
+            ))
+          ) : messages.length === 0 ? (
             <p style={{
               textAlign: 'center',
               color: 'var(--muted)',
-              padding: '40px 0'
+              padding: '48px 0',
+              fontSize: '16px',
             }}>
               Belum ada pesan. Jadilah yang pertama! 🎉
             </p>
@@ -166,43 +229,47 @@ export default function GuestbookPage() {
             messages.map((msg) => (
               <div
                 key={msg.id}
-                style={{
-                  padding: '20px',
-                  background: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
-                }}
+                className="messageCard"
               >
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '12px',
+                  alignItems: 'flex-start',
+                  marginBottom: '10px',
                   flexWrap: 'wrap',
                   gap: '8px',
                 }}>
-                  <strong style={{
-                    color: 'var(--accent)',
-                    fontSize: '16px'
-                  }}>
-                    {msg.name}
-                  </strong>
-                  <span style={{
-                    fontSize: '13px',
-                    color: 'var(--muted)'
-                  }}>
-                    {msg.createdAt?.toDate().toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {/* Avatar initial */}
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: 'var(--text)',
+                      color: 'var(--bg)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      flexShrink: 0,
+                    }}>
+                      {msg.name.charAt(0).toUpperCase()}
+                    </div>
+                    <strong style={{ color: 'var(--text)', fontSize: '15px' }}>
+                      {msg.name}
+                    </strong>
+                  </div>
+                  <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                    {formatDate(msg.created_at)}
                   </span>
                 </div>
                 <p style={{
-                  color: 'var(--text)',
+                  color: 'var(--muted)',
                   lineHeight: '1.7',
-                  margin: 0
+                  margin: 0,
+                  fontSize: '15px',
+                  paddingLeft: '46px',
                 }}>
                   {msg.message}
                 </p>
@@ -211,6 +278,13 @@ export default function GuestbookPage() {
           )}
         </div>
       </section>
+
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </main>
   );
 }

@@ -83,20 +83,22 @@ export default function Hero() {
           </div>
         </div>
 
+        {/* Photo — di dalam blob shape */}
         <div className="photoWrapper">
-          <div className="photo">
-            <Image
-              src="/images/foto.png"
-              alt="Nathanael Kristian"
-              width={200}
-              height={200}
-              className="photoImg"
-              priority
-            />
+          <div className="photoFrame">
+            <div className="photo">
+              <Image
+                src="/images/fotoku11.png"
+                alt="Nathanael Kristian"
+                width={240}
+                height={240}
+                className="photoImg"
+                priority
+              />
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
-
 }
